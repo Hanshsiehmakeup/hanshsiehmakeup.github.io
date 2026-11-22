@@ -73,7 +73,7 @@ footer small{color:var(--mute);font-size:12px;align-self:flex-end}
 </header>
 
 <div class="hero" id="top">
-  <img src="ig/i001_01.jpg" alt="Hans Hsieh makeup work" data-g="0" class=on><img src="ig/i002_01.jpg" alt="Hans Hsieh makeup work" data-g="1"><img src="ig/i003_05.jpg" alt="Hans Hsieh makeup work" data-g="2"><div class="dots"></div>
+  <img src="ig/i001_01.jpg" alt="Hans Hsieh makeup work" data-g="0" data-k="0" class=on><img src="ig/i001_03.jpg" alt="Hans Hsieh makeup work" data-g="0" data-k="1"><img src="ig/i001_04.jpg" alt="Hans Hsieh makeup work" data-g="0" data-k="2"><img src="ig/i001_06.jpg" alt="Hans Hsieh makeup work" data-g="0" data-k="3"><img src="ig/i001_07.jpg" alt="Hans Hsieh makeup work" data-g="0" data-k="4"><img src="ig/i002_01.jpg" alt="Hans Hsieh makeup work" data-g="1" data-k="0"><img src="ig/i002_02.jpg" alt="Hans Hsieh makeup work" data-g="1" data-k="1"><img src="ig/i002_04.jpg" alt="Hans Hsieh makeup work" data-g="1" data-k="2"><img src="ig/i002_06.jpg" alt="Hans Hsieh makeup work" data-g="1" data-k="3"><img src="ig/i003_05.jpg" alt="Hans Hsieh makeup work" data-g="2" data-k="0"><div class="dots"></div>
   <h1>HANS<br>HSIEH</h1>
   
 </div>
@@ -105,16 +105,19 @@ let NC=0;function layout(force){const n=innerWidth<=760?2:3;if(n===NC&&!force)re
 let v=0;FIGS.forEach(f=>{if(f.classList.contains('hide'))return;cols[v%n].appendChild(f);v++})}
 layout();addEventListener('resize',()=>layout());
 document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{const cur=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('on',x===b));FIGS.forEach(f=>f.classList.toggle('hide',cur!=='all'&&f.dataset.cat!==cur));layout(true)});
-(()=>{const hs=[...document.querySelectorAll('.hero img')],dw=document.querySelector('.hero .dots');let h=0,t;dw.innerHTML=hs.map((_,j)=>`<i class="${j?'':'on'}"></i>`).join('');const ds=[...dw.children];
-const go=n=>{hs[h].classList.remove('on');ds[h].classList.remove('on');h=(n+hs.length)%hs.length;hs[h].classList.add('on');ds[h].classList.add('on')};
-const play=()=>{clearInterval(t);t=setInterval(()=>go(h+1),4500)};ds.forEach((d,j)=>d.onclick=e=>{e.stopPropagation();go(j);play()});hs.forEach(im=>im.onclick=()=>open(+im.dataset.g));play()})();
+(()=>{const hs=[...document.querySelectorAll('.hero img')],dw=document.querySelector('.hero .dots');let h=0,t;const NG=3;
+dw.innerHTML=[...Array(NG)].map((_,j)=>`<i class="${j?'':'on'}"></i>`).join('');const ds=[...dw.children];
+const go=n=>{hs[h].classList.remove('on');h=(n+hs.length)%hs.length;hs[h].classList.add('on');const g=+hs[h].dataset.g;ds.forEach((d,j)=>d.classList.toggle('on',j===g))};
+const play=()=>{clearInterval(t);t=setInterval(()=>go(h+1),3500)};
+ds.forEach((d,j)=>d.onclick=e=>{e.stopPropagation();go(hs.findIndex(x=>+x.dataset.g===j));play()});
+hs.forEach(im=>im.onclick=()=>open(+im.dataset.g,+im.dataset.k));play()})();
 const lb=document.getElementById('lb'),lbi=lb.querySelector('img'),cnt=lb.querySelector('.cnt'),dots=lb.querySelector('.dots'),P=lb.querySelector('.p'),N=lb.querySelector('.n');
 let gi=0,k=0;
 function render(){const g=G[gi].i;lbi.src=PA(g[k][0]);const m=g.length>1;
  cnt.textContent=m?`${k+1} / ${g.length}`:'';dots.innerHTML=m&&g.length<=12?g.map((_,j)=>`<i class="${j===k?'on':''}"></i>`).join(''):'';
  P.hidden=!m||k===0;N.hidden=!m||k===g.length-1;
  if(g[k+1]){const pre=new Image();pre.src=PA(g[k+1][0])}}
-function open(i){gi=i;k=0;render();lb.classList.add('on');document.body.style.overflow='hidden'}
+function open(i,kk){gi=i;k=kk||0;render();lb.classList.add('on');document.body.style.overflow='hidden'}
 function close(){lb.classList.remove('on');document.body.style.overflow=''}
 function step(d){const n=k+d;if(n<0||n>=G[gi].i.length)return;k=n;render()}
 grid.onclick=e=>{const f=e.target.closest('figure');if(f)open(+f.dataset.i)};
