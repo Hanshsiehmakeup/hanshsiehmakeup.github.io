@@ -1,0 +1,78 @@
+# Rebuilds the share-preview image when works.json (or the site URL) changes.
+#
+# GitHub Pages publishes this repo from the main branch. A commit pushed with
+# the workflow token does not start that publish by itself, and it also does
+# not start a new run of this workflow, so the commit cannot loop. After a
+# real change, the last step asks Pages to build that commit.
+
+name: Link preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "works.json"
+      - "preview.config.json"
+      - "ig/**"
+      - "w/**"
+      - "index.html"
+      - "scripts/update_og_preview.py"
+      - "scripts/request_pages_build.sh"
+      - "scripts/requirements.txt"
+      - ".github/workflows/link-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: link-preview
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        run: python -m pip install -r scripts/requirements.txt
+
+      - name: Rebuild preview image and meta tags
+        run: python scripts/update_og_preview.py
+
+      - name: Commit preview when the newest photo changed
+        id: commit
+        run: |
+          set -euo pipefail
+          if [ "$(git rev-parse --abbrev-ref HEAD)" = "HEAD" ]; then
+            git checkout -B "${GITHUB_REF_NAME}"
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- index.html og
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Preview already matches the newest post."
+            exit 0
+          fi
+          git commit -m "Update link preview to the newest post"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the preview commit to GitHub Pages
+        if: steps.commit.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/request_pages_build.sh
